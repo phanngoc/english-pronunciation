@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Practice App</title>
+    <style>
+        .correct { color: green; }
+        .missing { color: red; }
+        .extra { color: orange; }
+    </style>
+    <script>
+
+        function displayFeedback(feedback) {
+            const feedbackContainer = document.getElementById('feedback');
+            feedbackContainer.innerHTML = '';
+
+            feedback.forEach(item => {
+                const span = document.createElement('span');
+                span.className = item.status;
+                span.innerText = item.word + ' ';
+                feedbackContainer.appendChild(span);
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Language Practice App</h1>
+    <label for="duration">Recording Duration (seconds):</label>
+    <input type="number" id="duration" name="duration" value="5">
+    <button id="startRecording">Start Recording</button>
+    <button id="stopRecording" disabled>Stop Recording</button>
+    <p id="transcription"></p>
+    <div id="feedback"></div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        document.getElementById('startRecording').addEventListener('click', async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = event => {
+                console.log('Data available...', event.data);
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                console.log('Recording stopped...', audioChunks);
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+
+                const duration = document.getElementById('duration').value;
+                console.log('Recording audio for ' + duration + ' seconds...');
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'recording.wav');
+                formData.append('duration', duration);
+
+                const response = await fetch('/record', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                document.getElementById('transcription').innerText = `Transcription: ${data.transcription}`;
+                displayFeedback(data.feedback);
+
+                audioChunks = [];
+            };
+
+            mediaRecorder.start();
+            document.getElementById('startRecording').disabled = true;
+            document.getElementById('stopRecording').disabled = false;
+        });
+
+        document.getElementById('stopRecording').addEventListener('click', async () => {
+            mediaRecorder.stop();
+            document.getElementById('startRecording').disabled = false;
+            document.getElementById('stopRecording').disabled = true;
+        });
+    </script>
+</body>
+</html>
