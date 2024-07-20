@@ -28,7 +28,10 @@ To get started with this project, follow these steps:
 
 5. Access the application in your web browser at `http://localhost:5000`.
 
+![alt text](<images/Screen Shot 2024-07-20 at 11.36.11.png>)
+
 ## Contributing
+
 
 Contributions are welcome! If you would like to contribute to this project, please follow the guidelines outlined in the `CONTRIBUTING.md` file.
 
