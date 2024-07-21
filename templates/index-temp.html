@@ -10,6 +10,12 @@
         .correct { color: green; }
         .missing { color: red; }
         .extra { color: orange; }
+        #startRecording:disabled,
+        #stopRecording:disabled {
+            background-color: grey;
+            color: white;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-900">
@@ -20,7 +26,7 @@
             <input type="number" id="duration" name="duration" value="5" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none 
                 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
             <textarea id="sentences" name="sentences" rows="4" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 
-                focus:border-indigo-500 sm:text-sm">Our goal is to create an environment where everyone feels valued and included</textarea>
+                focus:border-indigo-500 sm:text-sm">{{ suggest_sentence }}</textarea>
         </div>
         <div class="flex space-x-2 mb-4">
             <button id="startRecording" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Start Recording</button>

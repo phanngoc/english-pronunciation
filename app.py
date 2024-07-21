@@ -6,6 +6,8 @@ import scipy.io.wavfile as wav
 import difflib
 import os
 from nltk.corpus import cmudict
+from suggest import get_suggest_sentence
+
 d = cmudict.dict()
 
 def get_phonetic_transcription(word):
@@ -66,7 +68,8 @@ model = whisper.load_model("small.en")
 @app.route('/')
 def index():
     print("Hello")
-    return render_template('index-temp.html')
+    suggest_sentence = get_suggest_sentence()
+    return render_template('index-temp.html', suggest_sentence=suggest_sentence)
 
 def get_pronunciation_feedback(transcription, reference):
     diff = difflib.ndiff(transcription.split(), reference.split())
