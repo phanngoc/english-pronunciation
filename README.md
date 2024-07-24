@@ -32,8 +32,9 @@ To get started with this project, follow these steps:
 
 ## Contributing
 
-
-Contributions are welcome! If you would like to contribute to this project, please follow the guidelines outlined in the `CONTRIBUTING.md` file.
+Phân đang research:
+- Sử dụng link audio trả về từ tts model để đánh giá pronunciation
+- Sử dụng link audio trả về từ tts model đưa ra cho người học nghe.
 
 ## License
 

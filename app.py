@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 import whisper
 import sounddevice as sd
 import numpy as np
@@ -6,7 +6,7 @@ import scipy.io.wavfile as wav
 import difflib
 import os
 from nltk.corpus import cmudict
-from suggest import get_suggest_sentence
+from suggest import get_suggest_sentence, run_tts
 
 d = cmudict.dict()
 
@@ -57,6 +57,8 @@ app = Flask(__name__)
 
 # Set maximum request size (e.g., 16 MB)
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB
+UPLOAD_FOLDER = 'uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.errorhandler(413)
 def request_entity_too_large(error):
@@ -69,7 +71,14 @@ model = whisper.load_model("small.en")
 def index():
     print("Hello")
     suggest_sentence = get_suggest_sentence()
-    return render_template('index-temp.html', suggest_sentence=suggest_sentence)
+    audioUrl = run_tts(suggest_sentence, 'uploads')
+    print('audioPath:', audioUrl)
+    return render_template('index-temp.html', suggest_sentence=suggest_sentence,
+        audioUrl=audioUrl)
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 def get_pronunciation_feedback(transcription, reference):
     diff = difflib.ndiff(transcription.split(), reference.split())
@@ -102,7 +111,7 @@ def record():
     transcription = result["text"]
 
     reference_text = request.form['sentences']
-
+    
     # Compare transcriptions
     feedback_phonic = compare_phonetic_transcriptions(transcription, reference_text)
     feedback_word = get_pronunciation_feedback(transcription, reference_text)
