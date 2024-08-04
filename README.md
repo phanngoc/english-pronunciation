@@ -18,24 +18,46 @@ Assessing pronunciation is an important aspect of language learning. This projec
 
 To get started with this project, follow these steps:
 
-1. Clone the repository: `git clone https://github.com/phanngoc/english-pronunciation.git`
+- Clone the repository: `git clone https://github.com/phanngoc/english-pronunciation.git`
 
-2. Install the required dependencies: `pip install -r requirements.txt`
+- Setup virtual environment
+```
+python -m venv myenv
+source myenv/bin/activate
+pip install -r requirements.txt
+```
 
-3. Set up OpenAI Whisel API credentials: Follow the instructions in the `config.py` file to obtain your API credentials and update the configuration accordingly.
+- Set up OpenAI Whisel API credentials.
+Setup .env
+```
+OPENAI_API_KEY=
+```
 
-4. Run the application: `python app.py`
+- Running worker
+```
+./myenv/bin/celery -A tasks worker -l INFO --concurrency=1
+```
 
-5. Access the application in your web browser at `http://localhost:5000`.
+- Running web server
+```
+./myenv/bin/python app.py
+```
+
+- Running dashboard flower (tracking task)
+```
+./myenv/bin/celery -A tasks flower
+```
+
+1. Access the application in your web browser at `http://localhost:5000`.
 
 ![alt text](<images/Screen Shot 2024-07-20 at 11.36.11.png>)
 
 ## Contributing
 
 Phân đang research:
-- Sử dụng link audio trả về từ tts model để đánh giá pronunciation
+- Sử dụng link audio trả về từ tts model để đánh giá pronunciation.
 - Sử dụng link audio trả về từ tts model đưa ra cho người học nghe.
-
+    => cái ni hơi khoai, cần load stream về bằng ajax sau khi load page.
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
@@ -43,3 +65,15 @@ This project is licensed under the [MIT License](LICENSE).
 ## Acknowledgements
 
 We would like to express our gratitude to OpenAI for providing the Whisel API, which powers the pronunciation assessment in this project.
+
+## Acknowledgements
+
+We would like to express our gratitude to OpenAI for providing the Whisel API, which powers the pronunciation assessment in this project.
+
+We would also like to thank gTTS (Google Text-to-Speech) for their contribution. gTTS is used to generate audio links for pronunciation evaluation and listening exercises.
+
+## Development
+
+```bash
+pip freeze > requirements.txt
+```

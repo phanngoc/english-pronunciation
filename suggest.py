@@ -52,20 +52,6 @@ def get_suggest_sentence():
         temperature=0.7)
 
     summary = response.choices
-    return summary[0].message.content
-
-import time
-from TTS.api import TTS
-tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2", gpu=False)
-
-text="It took me quite a long time to develop a voice, and now that I have it I'm not going to be silent."
-
-def run_tts(text, dir=""):
-    namefile = "voice-" + str(int(time.time()))
-    filePath = dir + "/" + namefile + ".wav"
-    tts.tts_to_file(text=text,
-        file_path=filePath,
-        language="en",
-        speaker="Ana Florence"
-        )
-    return namefile + ".wav"
+    text = summary[0].message.content
+    # text = "One challenging experience I faced was adapting to a new work culture when I moved abroad, and I overcame it by actively seeking feedback, learning the local language, and building strong relationships with my colleagues"
+    return text

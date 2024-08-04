@@ -34,9 +34,10 @@
         </div>
         <p id="transcription" class="mb-4"></p>
         <div id="feedback" class="p-4 bg-white rounded-md shadow-md"></div>
-        <div id="audioContainer" class="mb-4">
+        <label for="audioContainer" class="block text-sm font-medium text-gray-700 mb-2">Listen to real native voice</label>
+        <div id="audioContainer" class="mb-4 p-4 border border-gray-300 shadow-lg rounded-lg bg-white">
                 <!-- Audio with controls -->
-            <audio controls>
+            <audio controls class="w-full">
                 <source src="{{ url_for('uploaded_file', filename=audioUrl) }}" type="audio/mpeg">
                 <source src="{{ url_for('uploaded_file', filename=audioUrl) }}" type="audio/ogg">
                 Your browser does not support the audio element.
