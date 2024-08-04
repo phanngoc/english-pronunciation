@@ -1,3 +1,4 @@
+# from celery import Celery
 from flask import Flask, request, jsonify, render_template, send_from_directory
 import whisper
 import sounddevice as sd
@@ -6,7 +7,11 @@ import scipy.io.wavfile as wav
 import difflib
 import os
 from nltk.corpus import cmudict
-from suggest import get_suggest_sentence, run_tts
+from suggest import get_suggest_sentence
+from tasks import add_together, generate_audio_task
+# from celery.result import AsyncResult
+import time
+import datetime
 
 d = cmudict.dict()
 
@@ -37,6 +42,14 @@ def highlight_syllables(expected_syllables, actual_syllables, word):
     return highlighted
 
 def compare_phonetic_transcriptions(expected, actual):
+    """
+    Compare the phonetic transcriptions of the expected and actual words.
+    Args:
+        expected (str): The expected word or phrase.
+        actual (str): The actual word or phrase.
+    Returns:
+        list: A list of dictionaries containing the actual word and highlighted syllables.
+    """
     """Compare the phonetic transcriptions of the expected and actual words."""
     feedback = []
     for exp_word, act_word in zip(expected.split(), actual.split()):
@@ -67,14 +80,41 @@ def request_entity_too_large(error):
 # Load the Whisper model
 model = whisper.load_model("small.en")
 
+# @app.route('/task_status/<task_id>')
+# def task_status(task_id):
+#     task = AsyncResult(task_id, app=celery)
+#     if task.state == 'PENDING':
+#         response = {
+#             'state': task.state,
+#             'status': 'Pending...'
+#         }
+#     elif task.state != 'FAILURE':
+#         response = {
+#             'state': task.state,
+#             'result': task.result,
+#             'status': 'Task completed!'
+#         }
+#     else:
+#         response = {
+#             'state': task.state,
+#             'status': str(task.info)
+#         }
+#     return jsonify(response)
+
+
 @app.route('/')
 def index():
-    print("Hello")
+    print("Hello index")
     suggest_sentence = get_suggest_sentence()
-    audioUrl = run_tts(suggest_sentence, 'uploads')
-    print('audioPath:', audioUrl)
-    return render_template('index-temp.html', suggest_sentence=suggest_sentence,
-        audioUrl=audioUrl)
+    add_together.delay(23, 42)
+    audioUrl = generate_name_file()
+    generate_audio_task.delay(suggest_sentence, 'uploads', audioUrl)
+    return render_template('index-temp.html', suggest_sentence=suggest_sentence, audioUrl=audioUrl)
+
+def generate_name_file():
+    now = datetime.datetime.now()
+    name = "voice-" + now.strftime("%y%m%d%H:%M") + '.wav'
+    return name
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
