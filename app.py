@@ -1,5 +1,6 @@
 # from celery import Celery
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, url_for
+from gruut import sentences
 import whisper
 import sounddevice as sd
 import numpy as np
@@ -12,6 +13,7 @@ from tasks import add_together, generate_audio_task
 # from celery.result import AsyncResult
 import time
 import datetime
+import jiwer
 
 d = cmudict.dict()
 
@@ -41,30 +43,25 @@ def highlight_syllables(expected_syllables, actual_syllables, word):
             highlighted.append(f'<span style="color: red;">{chars}</span>')
     return highlighted
 
-def compare_phonetic_transcriptions(expected, actual):
-    """
-    Compare the phonetic transcriptions of the expected and actual words.
-    Args:
-        expected (str): The expected word or phrase.
-        actual (str): The actual word or phrase.
-    Returns:
-        list: A list of dictionaries containing the actual word and highlighted syllables.
-    """
-    """Compare the phonetic transcriptions of the expected and actual words."""
-    feedback = []
-    for exp_word, act_word in zip(expected.split(), actual.split()):
-        exp_phonetic = get_phonetic_transcription(exp_word)
-        act_phonetic = get_phonetic_transcription(act_word)
-        print(f"Expected: {exp_word} -> {exp_phonetic} -> {act_word}")
-        if exp_phonetic and act_phonetic:
-            exp_syllables = [syllable for phoneme in exp_phonetic for syllable in phoneme]
-            act_syllables = [syllable for phoneme in act_phonetic for syllable in phoneme]
-            highlighted_syllables = highlight_syllables(exp_syllables, act_syllables, act_word)
-            feedback.append({'word': act_word, 'highlighted_syllables': ''.join(highlighted_syllables)})
-        else:
-            feedback.append({'word': act_word, 'highlighted_syllables': f'<span style="color: red;">{act_word}</span>'})
+def highlight_differences(true_text, pred_text):
+    true_words = true_text.split()
+    pred_words = pred_text.split()
     
-    return feedback
+    # Initialize lists for highlighted words
+    highlighted = []
+    print('true_words:', true_words)
+    print('pred_words:', pred_words)
+    # Compare words in true and predicted text
+    max_len = max(len(true_words), len(pred_words))
+    for i in range(max_len):
+        pred_word = pred_words[i] if i < len(pred_words) else ""
+        print('pred_word:', pred_word)
+        if pred_word in true_words:
+            highlighted.append(f'<span style="color: green;">{pred_word}</span>')  # Green for correct
+        else:
+            highlighted.append(f'<span style="color: red;">{pred_word}</span>')  # Red for incorrect
+
+    return ' '.join(highlighted)
 
 app = Flask(__name__)
 
@@ -79,28 +76,6 @@ def request_entity_too_large(error):
 
 # Load the Whisper model
 model = whisper.load_model("small.en")
-
-# @app.route('/task_status/<task_id>')
-# def task_status(task_id):
-#     task = AsyncResult(task_id, app=celery)
-#     if task.state == 'PENDING':
-#         response = {
-#             'state': task.state,
-#             'status': 'Pending...'
-#         }
-#     elif task.state != 'FAILURE':
-#         response = {
-#             'state': task.state,
-#             'result': task.result,
-#             'status': 'Task completed!'
-#         }
-#     else:
-#         response = {
-#             'state': task.state,
-#             'status': str(task.info)
-#         }
-#     return jsonify(response)
-
 
 @app.route('/')
 def index():
@@ -152,13 +127,24 @@ def record():
 
     reference_text = request.form['sentences']
     
-    # Compare transcriptions
-    feedback_phonic = compare_phonetic_transcriptions(transcription, reference_text)
-    feedback_word = get_pronunciation_feedback(transcription, reference_text)
+    
+    sentences_diff = highlight_differences(reference_text, transcription)
+    print('sentences_diff', sentences_diff)
+    return jsonify({
+            'transcription': transcription,
+            'sentences_diff': sentences_diff
+            })
 
-    return jsonify({'transcription': transcription, 'feedback_phonic': feedback_phonic,
-        'feedback_word': feedback_word})
-
+@app.route('/load-sentence-audio', methods=['GET'])
+def get_new_sentence_and_audio():
+    suggest_sentence = get_suggest_sentence()
+    audioUrl = generate_name_file()
+    generate_audio_task.delay(suggest_sentence, 'uploads', audioUrl)
+    return jsonify({
+        'sentence': suggest_sentence,
+        'audioUrlMp3': url_for('uploaded_file', filename=audioUrl),
+        'audioUrlOgg': url_for('uploaded_file', filename=audioUrl)
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)

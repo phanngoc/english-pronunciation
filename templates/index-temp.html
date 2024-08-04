@@ -31,18 +31,41 @@
         <div class="flex space-x-2 mb-4">
             <button id="startRecording" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Start Recording</button>
             <button id="stopRecording" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600" disabled>Stop Recording</button>
+            <button id="loadButton" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Load New Sentence and Audio</button>
         </div>
         <p id="transcription" class="mb-4"></p>
         <div id="feedback" class="p-4 bg-white rounded-md shadow-md"></div>
         <label for="audioContainer" class="block text-sm font-medium text-gray-700 mb-2">Listen to real native voice</label>
         <div id="audioContainer" class="mb-4 p-4 border border-gray-300 shadow-lg rounded-lg bg-white">
                 <!-- Audio with controls -->
-            <audio controls class="w-full">
-                <source src="{{ url_for('uploaded_file', filename=audioUrl) }}" type="audio/mpeg">
-                <source src="{{ url_for('uploaded_file', filename=audioUrl) }}" type="audio/ogg">
+            <audio controls class="w-full" id="audioPlayer">
+                <source id="audioSourceMp3" src="{{ url_for('uploaded_file', filename=audioUrl) }}" type="audio/mpeg">
+                <source id="audioSourceOgg" src="{{ url_for('uploaded_file', filename=audioUrl) }}" type="audio/ogg">
                 Your browser does not support the audio element.
             </audio>
-            
+            <script>
+                const audioPlayer = document.getElementById('audioPlayer');
+                const audioSourceMp3 = document.getElementById('audioSourceMp3');
+                const audioSourceOgg = document.getElementById('audioSourceOgg');
+
+                const fnTriggerCheck = () => {
+                    const audioUrl = audioSourceMp3.src;
+                    function checkAudioAvailability() {
+                    fetch(audioUrl, { method: 'HEAD' })
+                        .then(response => {
+                            if (response.ok) {
+                                audioSourceMp3.src = audioUrl;
+                                audioSourceOgg.src = audioUrl;
+                                audioPlayer.load();
+                                clearInterval(intervalId);
+                            }
+                            })
+                            .catch(error => console.error('Error checking audio file:', error));
+                    }
+
+                    const intervalId = setInterval(checkAudioAvailability, 3000); // Check every 5 
+                }
+            </script>
         </div>
     </div>
 
@@ -50,16 +73,10 @@
         let mediaRecorder;
         let audioChunks = [];
 
-
-        function displayFeedback(feedback) {
-            const $feedbackContainer = $('#feedback');
-            $feedbackContainer.empty();
-            let stringResult = "";
-            feedback.forEach(item => {
-                console.log("displayFeedback: each", item);
-                stringResult += item.highlighted_syllables + " ";
-            });
-            $feedbackContainer.append(stringResult);
+        function displaySentencesDiff(sentencesDiff) {
+            const $sentencesDiffContainer = $('#feedback');
+            $sentencesDiffContainer.empty();
+            $sentencesDiffContainer.append(sentencesDiff);
         }
 
         document.getElementById('startRecording').addEventListener('click', async () => {
@@ -89,8 +106,7 @@
 
                 const data = await response.json();
                 document.getElementById('transcription').innerText = `Transcription: ${data.transcription}`;
-                displayFeedback(data.feedback_phonic);
-
+                displaySentencesDiff(data.sentences_diff);
                 audioChunks = [];
             };
 
@@ -103,6 +119,22 @@
             mediaRecorder.stop();
             document.getElementById('startRecording').disabled = false;
             document.getElementById('stopRecording').disabled = true;
+        });
+
+        document.getElementById('loadButton').addEventListener('click', () => {
+            fetch('/load-sentence-audio')
+                .then(response => response.json())
+                .then(data => {
+                    // Update the textarea with the new sentence
+                    document.getElementById('sentences').value = data.sentence;
+
+                    // Update the audio sources with the new audio file
+                    document.getElementById('audioSourceMp3').src = data.audioUrlMp3;
+                    document.getElementById('audioSourceOgg').src = data.audioUrlOgg;
+                    document.getElementById('audioPlayer').load();
+                    fnTriggerCheck();
+                })
+                .catch(error => console.error('Error loading new sentence and audio:', error));
         });
     </script>
 </body>
