@@ -1,4 +1,5 @@
-./uploads
+/uploads/
 .env
 ./research/.gitignore
-./myenv
+./myenv/
+./__pycache__/

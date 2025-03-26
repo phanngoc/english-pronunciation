@@ -31,16 +31,16 @@ def pick_topic():
 # write function helper
 def get_suggest_sentence():
     system_prompt = """
-        I am english learner, you are my coach, suggest me one sentence to practice speaking, for intermediate level.
-        Only output sentence less than 2 lines.
+        You are my English speaking coach. Please suggest one sentence for me to practice speaking. 
+        The sentence should be suitable for an intermediate level and be concise, no longer than two lines.
         \n\n
         """
 
     chat_message = pick_topic()
-
+    topic = f"Topic: {chat_message}"
     messages = [
         {"role": "system", "content": f"{system_prompt}"},
-        {"role": "user", "content": chat_message},
+        {"role": "user", "content": topic},
     ]
     response = client.chat.completions.create(
         model=GPT_MODEL,
